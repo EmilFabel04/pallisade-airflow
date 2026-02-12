@@ -1,11 +1,4 @@
-# Local-only overrides to avoid host port conflicts.
-# This file is intentionally safe to keep in git: it uses non-default host ports.
-
-services:
-  airflow-webserver:
-    ports:
-      - "127.0.0.1:8081:8080"
-
-  postgres:
-    ports:
-      - "127.0.0.1:5433:5432"
+# NOTE: This file was previously a backup of a local override.
+# Keeping it in the repo is confusing and can break tooling expectations.
+# It is intentionally left as a no-op placeholder; use docker-compose.yml (ports remapped)
+# or start via Astronomer (Astro) with the instructions in README.
