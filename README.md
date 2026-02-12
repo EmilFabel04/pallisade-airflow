@@ -1,17 +1,22 @@
 # pallisade-airflow
 
-Apache Airflow repo scaffold for Pallisade.
+Apache Airflow repo for orchestrating your BigQuery + dbt pipeline.
+
+## What this orchestrates (based on your lineage)
+
+From the lineage graph in Pallisade:
+- `bigen-484520.analytics.stg_orders` depends on `bigen-484520.raw.orders`
+- `bigen-484520.analytics.daily_revenue` depends on `bigen-484520.raw.orders`, `bigen-484520.raw.customers`, and `bigen-484520.analytics.stg_orders`
+- `bigen-484520.analytics.product_performance`, `...customer_metrics`, and `...int_customer_orders` are downstream of `...stg_orders`
+
+This repo includes an orchestration DAG:
+- `dags/pipeline_dbt_bigquery.py`
+
+It runs dbt for the lineage-relevant models: `stg_orders+ daily_revenue product_performance customer_metrics int_customer_orders`.
 
 ## Local development
 
 ### Start with Docker Compose (repo-native)
-
-This repo includes a `docker-compose.yml` that runs:
-- Postgres (metadata DB)
-- Airflow webserver
-- Airflow scheduler
-
-Bring it up:
 
 ```bash
 docker compose up airflow-init
@@ -19,41 +24,37 @@ docker compose up
 ```
 
 Airflow UI:
-- http://localhost:8081 (mapped from container port 8080)
+- http://localhost:8081
 
-Postgres (optional, for connecting with a DB client):
-- localhost:5433 (mapped from container port 5432)
+Postgres (optional):
+- localhost:5433
 
-> Note: ports are remapped directly in `docker-compose.yml` so it works even if you already have services on 8080/5432.
+### Configure dbt for the Airflow container
 
-### Start with Astronomer (Astro)
+The orchestration DAG expects your dbt project to be available at:
+- `/opt/airflow/dbt`
 
-This repo includes an Astro `Dockerfile` (Astronomer Runtime). If you run:
+You have two options:
+1) **Mount your dbt project** into the container at runtime
+2) **Vendor the dbt project** into this repo under `dbt/` and mount it in `docker-compose.yml`
 
+Also set these variables (defaults shown):
+- `DBT_PROJECT_DIR=/opt/airflow/dbt`
+- `DBT_PROFILES_DIR=/opt/airflow/dbt`
+- `DBT_TARGET=prod`
+- `DBT_SELECTOR="stg_orders+ daily_revenue product_performance customer_metrics int_customer_orders"`
+
+### BigQuery credentials
+
+For local runs, the simplest approach is to use Application Default Credentials (ADC) and mount them into the container.
+
+Example (host):
 ```bash
-astro dev start
+gcloud auth application-default login
+gcloud config set project bigen-484520
 ```
 
-Astro may still try to bind default local ports depending on your local Astro config. If you hit port conflicts, the easiest path is to run the repo-native compose above.
-
-If you prefer Astro for local dev, run it on the same free ports by using a compose file override (recommended):
-
-1) Create `compose.local.yml`:
-```yaml
-services:
-  postgres:
-    ports:
-      - "127.0.0.1:5433:5432"
-  airflow-webserver:
-    ports:
-      - "127.0.0.1:8081:8080"
-```
-
-2) Start Astro using it:
-```bash
-astro dev stop || true
-astro dev start --compose-file compose.local.yml
-```
+Then ensure the ADC file is mounted into the Airflow containers (see your local docker-compose customization).
 
 ## Defaults
 
