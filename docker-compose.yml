@@ -36,6 +36,9 @@ services:
       retries: 10
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+    # Remap host port to avoid conflicts with local Postgres on 5432
+    ports:
+      - "127.0.0.1:5433:5432"
 
   airflow-init:
     <<: *airflow-common
@@ -55,8 +58,9 @@ services:
   airflow-webserver:
     <<: *airflow-common
     command: webserver
+    # Remap host port to avoid conflicts with other services on 8080
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8081:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s
