@@ -1,35 +1,44 @@
 # pallisade-airflow
 
-Apache Airflow DAG repository for Pallisade.
+Apache Airflow repo scaffold for Pallisade.
 
-## Repository layout
+## Local development
 
-- `dags/` — Airflow DAG definitions
-- `plugins/` — Custom operators/hooks/sensors (if needed)
-- `include/` — SQL/templates/config files used by DAGs
-- `tests/` — Unit tests for DAG import/structure
+### Start with Docker Compose (repo-native)
 
-## Local development (Docker Compose)
+This repo includes a `docker-compose.yml` that runs:
+- Postgres (metadata DB)
+- Airflow webserver
+- Airflow scheduler
 
-Prereqs: Docker + Docker Compose
+Bring it up:
 
 ```bash
-# From repo root
-cp .env.example .env
-
-docker compose up --build
+docker compose up airflow-init
+docker compose up
 ```
 
-Airflow UI: http://localhost:8080  
-Default credentials: `airflow` / `airflow`
+Airflow UI:
+- http://localhost:8081 (mapped from container port 8080)
 
-## Adding a DAG
+Postgres (optional, for connecting with a DB client):
+- localhost:5433 (mapped from container port 5432)
 
-1. Create a new file in `dags/` (e.g. `dags/my_dag.py`).
-2. Keep `start_date` static and in the past (don’t use `datetime.now()`), and set `catchup=False` unless you explicitly need backfills.
-3. Import must succeed with no network calls at parse time.
+> Note: Host ports are remapped via `docker-compose.override.yml` to avoid conflicts if you already have services on 8080/5432.
 
-## CI expectations
+### Start with Astronomer (Astro)
 
-- DAGs must import successfully.
-- Basic lint/format checks should pass.
+If you use Astronomer CLI, you can still keep this repo structure, but ensure your Astro project uses non-default host ports.
+
+If you hit a port conflict on startup, make sure `docker-compose.override.yml` exists and then restart:
+
+```bash
+astro dev stop
+astro dev start
+```
+
+## Defaults
+
+Airflow admin user (created by `airflow-init`):
+- username: `airflow`
+- password: `airflow`
