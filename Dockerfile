@@ -1,1 +1,5 @@
-FROM astrocrpublic.azurecr.io/runtime:3.1-12
+FROM apache/airflow:2.8.3
+
+USER airflow
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt

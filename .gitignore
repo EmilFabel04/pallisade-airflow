@@ -13,5 +13,8 @@ logs/
 # Env
 .env
 
+# Secrets (service account keys, etc.)
+secrets/
+
 # OS
 .DS_Store
