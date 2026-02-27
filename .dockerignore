@@ -6,3 +6,4 @@ logs/
 .venv
 airflow.db
 airflow.cfg
+auth_backends = airflow.api.auth.backend.basic_auth
