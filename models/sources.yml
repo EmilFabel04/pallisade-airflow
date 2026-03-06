@@ -1,0 +1,102 @@
+version: 2
+
+sources:
+  - name: public
+    description: "Fivetran landing tables in BigQuery"
+    database: bigen-484520
+    schema: public
+
+    tables:
+      - name: customers
+        description: "Customer data (Fivetran landing)"
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: email
+            tests: [not_null]
+          - name: first_name
+          - name: last_name
+          - name: phone
+          - name: city
+          - name: state
+          - name: country
+          - name: zip
+          - name: postal_code
+          - name: account_type
+          - name: status
+          - name: signup_date
+          - name: total_orders
+          - name: lifetime_value
+          - name: _loaded_at
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: orders
+        description: "Orders (Fivetran landing)"
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: order_number
+          - name: customer_email
+          - name: customer_name
+          - name: status
+          - name: payment_status
+          - name: payment_method
+          - name: subtotal
+          - name: tax
+          - name: shipping
+          - name: discount
+          - name: total
+          - name: items_count
+          - name: shipping_country
+          - name: shipping_state
+          - name: shipping_city
+          - name: billing_country
+          - name: billing_zip
+          - name: shipping_name
+          - name: shipping_address
+          - name: _loaded_at
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: events
+        description: "Events (Fivetran landing)"
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: event_name
+          - name: event_category
+          - name: customer_id
+          - name: session_id
+          - name: page_url
+          - name: device_type
+          - name: browser
+          - name: country
+          - name: city
+          - name: utm_source
+          - name: utm_medium
+          - name: utm_campaign
+          - name: revenue
+          - name: event_timestamp
+          - name: _loaded_at
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: products
+        description: "Products (Fivetran landing)"
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: sku
+          - name: name
+          - name: description
+          - name: category
+          - name: subcategory
+          - name: brand
+          - name: price
+          - name: cost
+          - name: stock_quantity
+          - name: is_active
+          - name: _loaded_at
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
