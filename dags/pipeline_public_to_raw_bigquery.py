@@ -65,7 +65,7 @@ def _set_watermark(table_name: str, new_value: str) -> None:
 
 def _ensure_soft_delete_column_sql(table_name: str, soft_delete_col: str) -> str:
     # BigQuery doesn't support IF NOT EXISTS for ADD COLUMN in all contexts;
-    # use a scripting block that checks INFORMATION_SCHEMA (allowed inside BigQuery execution).
+    # use a scripting block that checks INFORMATION_SCHEMA.
     return f"""
 DECLARE col_exists BOOL DEFAULT (
   SELECT COUNT(1) > 0
@@ -141,7 +141,8 @@ WHEN NOT MATCHED THEN
 
 
 def replicate_public_to_raw() -> None:
-    hook = BigQueryHook(gcp_conn_id="google_cloud_default", use_legacy_sql=False)
+    # Local Docker: rely on GOOGLE_APPLICATION_CREDENTIALS / ADC rather than an Airflow Connection.
+    hook = BigQueryHook(gcp_conn_id=None, use_legacy_sql=False)
 
     for cfg in TABLE_CONFIGS:
         table = cfg["name"]
@@ -163,7 +164,6 @@ def replicate_public_to_raw() -> None:
         # Advance watermark if there was new data
         max_synced = hook.get_first(_get_delta_max_synced_sql(table, synced_col, watermark))
         if max_synced and max_synced[0]:
-            # Store ISO string
             _set_watermark(table, max_synced[0].isoformat())
 
 
