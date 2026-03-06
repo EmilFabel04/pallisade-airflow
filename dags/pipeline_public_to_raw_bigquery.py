@@ -14,6 +14,11 @@ PROJECT_ID = "bigen-484520"
 SOURCE_DATASET = "public"
 TARGET_DATASET = "raw"
 
+# Use the standard conn id. For local docker you can provide it via env var:
+# AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT='google-cloud-platform://?extra__google_cloud_platform__project=bigen-484520'
+# plus GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json (or configure keyfile json in the conn extra).
+GCP_CONN_ID = "google_cloud_default"
+
 TABLE_CONFIGS = [
     {
         "name": "customers",
@@ -64,8 +69,6 @@ def _set_watermark(table_name: str, new_value: str) -> None:
 
 
 def _ensure_soft_delete_column_sql(table_name: str, soft_delete_col: str) -> str:
-    # BigQuery doesn't support IF NOT EXISTS for ADD COLUMN in all contexts;
-    # use a scripting block that checks INFORMATION_SCHEMA.
     return f"""
 DECLARE col_exists BOOL DEFAULT (
   SELECT COUNT(1) > 0
@@ -105,7 +108,6 @@ WHERE {synced_col} > TIMESTAMP('{watermark}')
 
 
 def _merge_sql(table_name: str, pk: str, synced_col: str, deleted_col: str, loaded_at_col: str, soft_delete_col: str, watermark: str) -> str:
-    # Use * EXCEPT on synced/deleted columns so we can re-add them with consistent types.
     # For orders: public has DATETIME for created_at/updated_at but raw expects STRING; cast those.
     if table_name == "orders":
         select_expr = f"""
@@ -141,8 +143,7 @@ WHEN NOT MATCHED THEN
 
 
 def replicate_public_to_raw() -> None:
-    # Local Docker: rely on GOOGLE_APPLICATION_CREDENTIALS / ADC rather than an Airflow Connection.
-    hook = BigQueryHook(gcp_conn_id=None, use_legacy_sql=False)
+    hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, use_legacy_sql=False)
 
     for cfg in TABLE_CONFIGS:
         table = cfg["name"]
@@ -154,14 +155,10 @@ def replicate_public_to_raw() -> None:
 
         watermark = _get_watermark(table)
 
-        # Ensure target table has columns needed for history tracking
         hook.run(_ensure_loaded_at_column_sql(table, loaded_at_col))
         hook.run(_ensure_soft_delete_column_sql(table, soft_delete_col))
-
-        # MERGE delta
         hook.run(_merge_sql(table, pk, synced_col, deleted_col, loaded_at_col, soft_delete_col, watermark))
 
-        # Advance watermark if there was new data
         max_synced = hook.get_first(_get_delta_max_synced_sql(table, synced_col, watermark))
         if max_synced and max_synced[0]:
             _set_watermark(table, max_synced[0].isoformat())
