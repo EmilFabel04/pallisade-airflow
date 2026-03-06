@@ -19,6 +19,7 @@ x-airflow-common:
     DBT_PROJECT_DIR: /opt/airflow/dbt
     DBT_PROFILES_DIR: /opt/airflow/dbt
     DBT_TARGET: prod
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: 'google-cloud-platform://?extra__google_cloud_platform__project=bigen-484520&extra__google_cloud_platform__key_path=%2Fopt%2Fairflow%2Fsecrets%2Fsa-key.json'
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
